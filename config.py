@@ -1,10 +1,6 @@
 #coding=utf8
 '''
-if config file doesn't exists, default value will be not update
-    configfile can be specified in cmdline (default "tornadod.conf")
-in configfile there is an element named path_mod_date which means the last
-    modified date of the monitor path, when this element is update(through
-    method of write_config, the note in configfile will be flush out
+If the configuration file (passed in from the command parameters, or assigned "tornadod.conf" by default) exists, default configure value will be updated
 '''
 import ConfigParser
 from optparse import OptionParser
@@ -14,13 +10,14 @@ configfile = 'tornadod.conf'
 
 USAGE = "usage: %prog [-???]  [-c configfile] arg"
 Parser = OptionParser(USAGE)
-Parser.add_option("-c", default = configfile, action = "store", type = "string", \
-                    dest = "configfile", help = "read config from config file")
-Parser.add_option("-f", "--file", action = "store", type = "string", \
-                   dest = "filename")
+Parser.add_option("-c", default = configfile, 
+							action = "store", type = "string",
+							dest = "configfile", help = "read config from config file")
 
+Parser.add_option("-f", "--file", action = "store", 
+							type = "string", dest = "filename")
 
-modified_effect_on_time = True
+#modified_effect_on_time = True
 
 url_check_effective_period = 10
 start_time = 1

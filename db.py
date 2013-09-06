@@ -15,7 +15,8 @@ debug = True
 debug = False
 
 class Connection_Watch_Dog(threading.Thread):
-    """Class Connection_Watch_Dog
+    """Accepts the task from DB_Master  (to verify the state of DB connection it holds itself, which can cause network IO stuck),
+    and report state to DB_Master before deadline as possible 
     """
     def __init__(self, host, connect_timeout, master, init = True):
         if debug: print >> sys.stderr, '#1'
@@ -27,8 +28,8 @@ class Connection_Watch_Dog(threading.Thread):
             if debug: print >> sys.stderr, '#3'
         self.__task_command = threading.BoundedSemaphore(1)
         if debug: print >> sys.stderr, '#4'
-        self.__host = host    # (str) 
-        self.__con = None     # (connection instance of MySQLdb) 
+        self.__host = host		# (str) ip of db_host
+        self.__con = None		# connection instance of MySQLdb
         self.__task_deadline = None  # (float) 
         self.__state = False
         self.__ct = connect_timeout
@@ -43,7 +44,8 @@ class Connection_Watch_Dog(threading.Thread):
 
     def set_task(self, deadline):
         self.__task_deadline = deadline
-        if debug: print TS(), 'set task ', self
+        if debug:
+			print TS(), 'set task ', self
         self.__task_command.release()
 
     def set_state(self, state):
@@ -62,19 +64,9 @@ class Connection_Watch_Dog(threading.Thread):
         self.init_callback(self.__host, self.__state)
 
     def __docheck(self):
-        def try_connect():
-            try:
-                con_timelimit = math.ceil( self.__task_deadline - time.time() )
-                con = MySQLdb.connect(host=self.__host, user=config.username, \
-                    passwd=config.password, db=config.database, connect_timeout=con_timelimit)
-                return (con, True)
-            except Exception, data:
-                if debug:
-                    print TS(), "这里 connect failed %s " % self.__host
-                    print 'Exception = ', data
-                return None
 
         if self.__state:
+            #verify the connection
             if debug: print TS(), "%s try show stat " % self.__host
             try:
                 if self.__con.stat() == 'MySQL server has gone away':
@@ -112,16 +104,15 @@ class Connection_Watch_Dog(threading.Thread):
                 if debug: print TS(), "这里 connect failed %s " % self.__host
 
     def run(self):
-        print "开始了 "
-        if self.init: self.init_connection() #################
+        if self.init: self.init_connection()
         while self.__keep_go:
-            self.__task_command.acquire()
-            deadline = self.__task_deadline
-            self.__docheck()
+            self.__task_command.acquire()	#wait for the task
+            deadline = self.__task_deadline	#get the deadline of task
+            self.__docheck()                #perform task, may get stuck in this function
             assert( self.__keep_go )
-            if deadline >= time.time():
+            if deadline >= time.time():		#if get the task done within deadline
                 self.submit_callback(self.__host, self.__state)
-            else:
+            else:										#
                 self.__state = False
                 self.return_callback(self.__host)
 
@@ -143,7 +134,6 @@ class Connection_Watch_Dog(threading.Thread):
         except: pass
 
     def __del__(self):
-        print "the problem maybe happened here"
         self.return_callback = None
         self.__keep_go = False
         self.submit_callback = None
@@ -152,14 +142,17 @@ class Connection_Watch_Dog(threading.Thread):
         except: pass
 
 class DB_Master(threading.Thread):
-    """Class DB_Master(threading.Thread) """
-
+    """	Controlling several Connection_Watch_Dog classes, maintain three scheduling queue
+		According to schedule steps, assigned task to Connection_Watch_Dog and
+		accepting their reporting information through submit_callback
+    """
     class ele(object):
+		'''	element nodes in schedual queue	'''
         def __init__(self, host, ts = time.time()):
             self.next = None
             self.pre = None
-            self.host = host
-            self.time = ts
+            self.host = host	#db host
+            self.time = ts		#timestamp, in different queue it has different mean
 
         def set_value(self, host, ts = time.time()):
             self.host = host
@@ -176,6 +169,12 @@ class DB_Master(threading.Thread):
             return "<%s>ele object host(%s) %s" % (__name__ , self.host, TS(self.time) )
 
     def __init__(self, hostlist, valid_period, dbchange_handler=None, init = True):
+		'''
+		hostlist is list of db which should be
+        valid_period is validity period of a db connection, after such period of time, the state of this connection
+            should be verify again
+        dbchange_handler deal the event that the state of db connection change, 
+		'''
         threading.Thread.__init__(self)
         self.__valid_head  = None
         self.__verify_head = None
@@ -402,13 +401,16 @@ class DB_Master(threading.Thread):
         return self.__db_state
 
     def __push_state(self, host, state):
-        if not self.dbchange_callback: return
+        if not self.dbchange_callback:
+            return
         self.dbchange_callback(host, state, self.__db_state)
+
     def need_restart(self):
         if len(self.hostlist)*[False] != self.__db_state.values():
             return False
         if self.__expire_empty():
             return False
+
     def get_alive_db_list(self, length):
         ''' randomly generate a list of length number of connectable db if there exist any available(alive)
             otherwise return []; 
@@ -450,12 +452,13 @@ class DB_Master(threading.Thread):
         self.__condition.acquire()
         self.__condition.notifyAll()
         self.__condition.release()
+
     def restart(self):
-        ''' 当没有db可用时，可能是因为db验证线程阻塞到网络io(con.stat)那里，
-            如果阻塞到网络io那里,就会停到expire_list 那里，
-            restart 返回一个新的dbm
+        '''When there's no DB available, probably because DB_Connection_Dogs' running thread block in network IO (in function of con.stat),
+		if it get block there, it would be in expire_list
+		this function returns a new DBM
         '''
-        #都为False并且expire里面有东西
+        #if all their state are false and expire not empty
         if not self.need_restart():
             return self
 
@@ -467,7 +470,7 @@ class DB_Master(threading.Thread):
                         self.dbchange_callback, init = False) 
         return new_dbm
         
-        '''下面的代码是停掉这些过期线程的代码'''
+        '''the following is old code, will not be run'''
         if self.__expire_empty(): return
         self.__condition.acquire()
         self.__pull_able.clear()
@@ -540,10 +543,10 @@ def PrintChange(host, state, d):
 
 # singleton & proxy
 class DBM_Proxy(object):
-    ''' db状态检查的代理类  初始化配置中db的连接
-        callback 是当db连接状态情况发生变化的时候调用的函数
-        flush 当没有可用db时候，如果没有可用db并且有卡死到网络io的db_dog
-        pull_state 是拉取所有db情况
+    '''DBM_Proxy is proxy of DB_Master instance. it initialize a DB_Master with the configure
+	callback is a function to be invoked when state of DB connection changed
+	flush would be executed when there is no available DB and there block some db_connection in network IO in expire list
+	pull_state's function is pulling all the state of DBs
     '''
     _this_dbm_proxy = DB_Master(config.dbhost_list, config.dbstate_update_rate) 
     __init__ = None
@@ -555,7 +558,7 @@ class DBM_Proxy(object):
 
     @staticmethod
     def flush():
-        '''仅当无可用db的时候 才刷新 刷新后无可用db 不刷新直接返回'''
+        '''	only when no DB is available	'''
         #control the flush frequency
         if time.time() - DBM_Proxy.ts < 2:
             print "不要刷新太频繁"
@@ -571,7 +574,7 @@ class DBM_Proxy(object):
             DBM_Proxy.flush()
     @staticmethod
     def pull_state():
-        '''在刚启动的时候或者刷新的时候会有点阻塞'''
+        '''you may meet a little block at start or just after flush'''
         return DBM_Proxy._this_dbm_proxy.pull_state()
     @staticmethod
     def stop():

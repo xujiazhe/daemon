@@ -19,6 +19,9 @@ import dispatcher
 
 
 def is_tornado_service(pid, info):
+	'''to verify whether a process is a tornado process we need to monitor
+	if it return True, this process start parameters have been saved in dict of info
+	'''
     try:    p = psutil.Process(pid)
     except: return False
     runcmd = p.cmdline
@@ -60,6 +63,9 @@ def PrintDict(msg, d):
         print e,d[e]
 
 class Secretary(object):
+	'''
+	
+	'''
     def __init__(self, addcb, delcb, am = None):
         self.write_watch_stamp()
         self.add_service = addcb
@@ -253,16 +259,12 @@ class Secretary(object):
         getPage(url).addCallbacks( justtest, another_test,['test'], errbackArgs = ['test1']);  return
 
 
-
 class UserService:
-    '''
-        each tornado web service instance match a
-    '''
+    '''	each tornado process(or those processes that will be start) conrrespond to an instance of UserService	'''
     def __init__(self, pid, port, db, name, pro = None):
         ''' construct a instance of user's tornado web service
-            pid could be 0, which means this instance need a start
-            pid 不是0 肯定有活跃进程 pro不为None
-            port 肯定不为0
+		pid could be 0, which means this instance need a start operation
+		or if pid is not 0 there must be alive process in memory, in that case pro couldn't be None
         '''
         self.pid = pid
         self.port = port
@@ -272,7 +274,7 @@ class UserService:
         self.home = os.path.join( config.watch_path, name, "")
         if pid == 0:
             self.pro = None
-            self.start()        #以后更新自己的pid
+            self.start() #it will update his own pid attribute
             return
         self.pro = pro; assert( pro != None )
 
@@ -295,10 +297,10 @@ class UserService:
             pidf  = os.path.join(self.home ,'pid')
             port = int( open(portf).readline().strip() )
             if port != self.port:
-                raise Exception("端口不一致")
+                raise Exception("port is not consistent")
             pid = int( open(pidf).readline().strip() )
             if pid != self.pid:
-                raise Exception("进程号不一致 什么错误这是？")
+                raise Exception("self.pid couldn't agree with the res grasp from web ??")
             return True
         except Exception,data:
             print 'data = ',data
@@ -325,7 +327,6 @@ class UserService:
             return False
 
     def start(self):
-        ''' force 留给服务管理员用 就是没有起来的时候再次启动 '''
         if self.is_alive() == True:
             print "没事瞎忙活"
             return
@@ -337,8 +338,7 @@ class UserService:
         self.start_time = time.time()
         code = os.system(cmd)
         if code:
-            print "%s 启动遇到问题亚 " % self.name
-        print "启动服务"
+            print "%s's start meet pro!!! " % self.name
 
     def stop(self):
         print 'try stop ',self
@@ -365,22 +365,22 @@ class UserService:
             self.db = changedb
         if self.is_alive():
             self.pro.kill()
-        self.start() ##很有可能起不来 port回收时间没有那么短
+        self.start() ##may be it couldn't start up, because the port recycle are limited by system setting
     def http_errback(self, err):
-        print self,'http异步取结果出现错误',err
+        print self,'errors occur when asynchronously fetch http results  ',err
         self.errback(self.name)
         #self.restart()
 
     def http_valid_verify(self, res):
         #192.168.2.31|8888|3993|test
-        print res,' 已经返回'
+        print res,' already return '
         r = res.split('|')
         if len(r) != 4:
             self.errback(self.name)
 
         wport = int(r[1])
         if wport != self.port:
-            print "这他妈的不可能",self
+            print "this is fucking impossible  ",self
             return
         wpid = int(r[2])
         if wpid != self.pid:
@@ -391,8 +391,8 @@ class UserService:
             self.pid = wpid
             self.pro = psutil.Process( wpid )
         if r[3] != self.name:
-            print"名字还不对了" ,self
-        print "通过验证的 ",self
+            print"Name inconsistencies" ,self
+        print "pass the verification  ",self
         self.set_time(0)
 
     def is_alive(self):

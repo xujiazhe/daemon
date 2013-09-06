@@ -1,7 +1,22 @@
 #!/bin/bash
+
+#The test script for the daemon project
+
 #sudo bash test.sh &>/home/xujiazhe/WK/test.log  &
+
 #run under the main.py monitor path
 #at first the path should have no user;
+
+#in each round of test, a certain operation from following will be chosen:
+#		add a few users
+#		del a few users
+#		mod a few users
+#		kill some effective users' serving process
+#		use firewall of iptables to (un)block a few db_host
+#		kill daemon‘s process
+#After an operation executed, the script will wait $ROUND_TIME seconds, if after that time daemon did not restore the legitimate service. 
+#The test program will report an ERROR and continue to  $ROUND_TIME seconds and then verify again
+
 
 MONITOR_PID_FILE="monitor.pid"
 

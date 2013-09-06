@@ -8,6 +8,24 @@ import config
 import asyncore
 import pyinotify
 
+'''
+When you want to add a user, add directory under the monitored directory folder. 
+	the new added directory's name should be same as that user's name
+	add port files and Tornado start package should be place under that directory
+this module's function is mainly to report the messages of appearence, disapearence and modification of effective user
+
+
+The effective user should meet those conditions
+Folder name see as the user name
+Add clip below the symbol
+there should exist those file
+	A file named port, inside which lay a port number which is assigned to this user. it should be same with other effective users
+				or the information of the one whose port file add later couldn't be add and push
+	Tornado start package, with this package, you can start this user's tornado process; the start file is config.start_file
+
+we use pyinotify module
+'''
+
 def portrange(port):
     if 0 < port < 65535:return True
     return False
@@ -15,8 +33,10 @@ def portrange(port):
 debug = False
 debug = True
 
-
 class UserInfoChangeHandler(pyinotify.ProcessEvent):
+	'''Monitor and push message of change of the valid user, it save all valid users' info in user_dict and port_dict
+	support command of  mv cp rm mkdir touch and so on
+	'''
     def __init__(self, add_callback=None,del_callback=None):
         self.path = os.path.join(config.watch_path,"")
         self.user_dict = {}

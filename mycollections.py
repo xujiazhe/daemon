@@ -1,8 +1,7 @@
 # encoding: UTF-8
 import time
 
-'''
-这个OrderedDict仅插入和弹出比库里面的那个快将近4倍  果断用这个了
+''' this version of OrderedDict operation of insert and eject can reach 4 times faster than that version in collection library
 '''
 class OrderedDictIterator(object):
     def __init__(self, tar):
@@ -19,29 +18,35 @@ class OrderedDictIterator(object):
         return self.cur._uname
 
 class OrderedDict(object):
+    '''DataStructure of Double-linked lists indexed by hashtable(for conveniece of search and delete)
+    Find or Delete  O(1)#hash
+    Enque or Deque  O(1)
+    '''
     class ele(object):
-        '''the instance of ele, could put in linklist, and be index by hashtable in OrderedDict
-            si is abre of  tornado service instance
-        '''
-        _freelist = None
-        _left_size = 0
+        '''  node element in Double-linked lists,  si is an instance of class UserService    '''
+        _freelist = None	#use these two variable to achieve function of object pool
+        _left_size = 0		#how many ele node left in this "pool"
+
         def __init__(self, si):
             self._prev  = None
             self._next = None
-            self._uname = ''
-            self.si = si
-            #si.set_time(time.time())
-            #self.db = ''
-            
-        def set_value(self, si):
-            self.si = si
             self._uname = si.name
             si.set_time(time.time())
-            #self.db = si.db
-            return self
-        #def __new__(self ):
-        #    if not ele._freelist:
-                
+
+        @classmethod
+        def __new__(cls, *args, **kwds):
+            if OrderedDict.ele._freelist:
+                node = OrderedDict.ele._freelist
+                OrderedDict.ele._freelist = OrderedDict.ele._freelist._next
+                OrderedDict.ele._left_size -= 1
+                return node
+            return super(OrderedDict.ele, cls).__new__(cls)
+
+        def __del__(self):
+            self._next = OrderedDict.ele._freelist
+            OrderedDict.ele._freelist = self
+            OrderedDict.ele._left_size += 1
+
         def invalid(self, expire_time):
             return time.time() > self.si.ts + expire_time
         def __eq__(self, data):
@@ -78,10 +83,7 @@ class OrderedDict(object):
             self._tail = e
         def popitem(self, e = None):# e is None,pop the last one
             if not e:   e = self._tail
-            #print "*" * 20
-            #print e
-            #print e._prev,e._next
-            #print "*" * 20
+
             if e._prev: e._prev._next = e._next
             else:       self._head = e._next
             if e._next: e._next._prev = e._prev
@@ -109,24 +111,8 @@ class OrderedDict(object):
     def __init__(self, expire_time = 2, size = 500):
         self.hashtable = dict()
         self.link = self.linkedlist()
-        self.freenode = None
         self.__hash__ = None
         self.expire_time = expire_time
-        for i in range(size):
-            t = self.ele(None)
-            t._next = self.freenode
-            self.freenode = t
-    def __malloc(self):
-        assert(self.freenode != None)
-        e = self.freenode
-        self.freenode = e._next
-        e._next = None
-        return e
-    def __free(self, e):
-        e._next = self.freenode
-        self.freenode = e
-    #def invalid(self, expire_time = self.expire_time):
-
     def size(self):
         return len(self.hashtable)
     def top(self):
@@ -144,18 +130,18 @@ class OrderedDict(object):
     def popitem(self, last = True):
         return self.deque()
     def append(self, si):
-        e = self.__malloc().set_value(si)
+        e = self.ele(si)
         self.hashtable[e] = e
         self.link.append(e)
     def prepend(self, si):
-        e = self.__malloc().set_value(si)
+        e = self.ele(si)
         self.hashtable[e] = e
         self.link.append(e)###
 
     def deque(self):
         e = self.link.popitem()
         self.hashtable.pop(e)
-        self.__free(e)
+        del e
         return e.si
 
     def pop(self, uname):
@@ -163,8 +149,7 @@ class OrderedDict(object):
         e = self.hashtable.pop(uname)
         self.link.popitem( e )
         si = e.si
-        self.__free(e)
-        print 'in pop',si
+        del e
         return si
         
     def __delitem__(self, uname):
@@ -172,7 +157,7 @@ class OrderedDict(object):
         self.link.popitem( e )
         self.__free(e)
     def __setitem__(self, uname, si):
-        e = self.__malloc().set_value(si)
+        e = self.ele(si)
         self.hashtable[uname] = e
         self.link.prepend(e)
 
@@ -188,9 +173,6 @@ class OrderedDict(object):
         s = str(len(self.hashtable))
         s += str(self.link)
         return s
-
-#进si出si
-#访问返回e
 
 if __name__ == '__main__':
 
