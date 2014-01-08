@@ -21,20 +21,20 @@ This daemon will monitor and handle all of these events in real-time at minimal 
 
 ##  Modules Instruction：
 
-- ####Main module:
+- **Main module:**
         Each module will push some message to this module, main module will react properly on each kind of message. Of course it will also ensure its validation after a restart.
         主模块：负责对各种模块推送过来的变化消息做出应对，当然它也会保证自己的重启有效性。
-- ####DB module:
+- **DB module:**
         Each Connection_watch_dog is responsible for watching and checking a certain db connection. the db_master will assign checking task with a deadline to them. after deadline db_master will look through who haven't report, and change a dict of dbs status. Outside module could visit, restart db_master through this proxy, and massage of db change could be push out through this proxy too.
         每个监控狗负责监控检查一个db连接，db主任来给他们分配检查任务，根据提交情况更改一个db状态表。外部模块通过db代理来访问,重启db主任，db主任通过代理向外推送db的变化。
-- ####Path module:
+- **Path module:**
         user's personnel directory(under which lie that user's config and running service pid file and using port info) will be put under specified path, when some modification, addition and deletion of these personnel information occur under that path. message of adduser, deluser, moduser to the main module.
         path模块:在用户个人目录下放着用户的配置信息服务进程pid,和port端口，当在那个目录下增删改这些信息的时候，该模块向主模块提交变化消息。
-- ####Dispatcher module:
+- **Dispatcher module:**
         It's responsible for checking those web processes' validation cyclically.
         负责对这些web服务进行周期性检查，有三个调度状态队列.
 
-- ####Test module:
+- **Test module:**
         模拟服务中各种突发事件，然后观察该deamon应对情况。
         Simulate most kinds of incidents and daily routine in service running, such as
             process crashes, DB status changing to (un)available, the tornado process get stuck, daemon crash itself.
