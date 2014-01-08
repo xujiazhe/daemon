@@ -24,27 +24,27 @@ This daemon will monitor and handle all of these events in real-time at minimal 
 
 - **Main module:**
 
-        Each module will push some message to this module, main module will react properly on each kind of message. Of course it will also ensure its validation after a restart.
+    Each module will push some message to this module, main module will react properly on each kind of message. Of course it will also ensure its validation after a restart.
 
-        主模块：负责对各种模块推送过来的变化消息做出应对，当然它也会保证自己的重启有效性。
+    主模块：负责对各种模块推送过来的变化消息做出应对，当然它也会保证自己的重启有效性。
 
 - **DB module:**
 
-        Each Connection_watch_dog is responsible for watching and checking a certain db connection. the db_master will assign checking task with a deadline to them. after deadline db_master will look through who haven't report, and change a dict of dbs status. Outside module could visit, restart db_master through this proxy, and massage of db change could be push out through this proxy too.
+    Each Connection_watch_dog is responsible for watching and checking a certain db connection. the db_master will assign checking task with a deadline to them. after deadline db_master will look through who haven't report, and change a dict of dbs status. Outside module could visit, restart db_master through this proxy, and massage of db change could be push out through this proxy too.
 
-        每个监控狗负责监控检查一个db连接，db主任来给他们分配检查任务，根据提交情况更改一个db状态表。外部模块通过db代理来访问,重启db主任，db主任通过代理向外推送db的变化。
+    每个监控狗负责监控检查一个db连接，db主任来给他们分配检查任务，根据提交情况更改一个db状态表。外部模块通过db代理来访问,重启db主任，db主任通过代理向外推送db的变化。
 
 - **Path module:**
 
-        user's personnel directory(under which lie that user's config and running service pid file and using port info) will be put under specified path, when some modification, addition and deletion of these personnel information occur under that path. message of adduser, deluser, moduser to the main module.
+    user's personnel directory(under which lie that user's config and running service pid file and using port info) will be put under specified path, when some modification, addition and deletion of these personnel information occur under that path. message of adduser, deluser, moduser to the main module.
 
-        path模块:在用户个人目录下放着用户的配置信息服务进程pid,和port端口，当在那个目录下增删改这些信息的时候，该模块向主模块提交变化消息。
+    path模块:在用户个人目录下放着用户的配置信息服务进程pid,和port端口，当在那个目录下增删改这些信息的时候，该模块向主模块提交变化消息。
 
 - **Dispatcher module:**
 
-        It's responsible for checking those web processes' validation cyclically.
+    It's responsible for checking those web processes' validation cyclically.
 
-        负责对这些web服务进行周期性检查，有三个调度状态队列.
+    负责对这些web服务进行周期性检查，有三个调度状态队列.
 
 - **Test module:**
 
@@ -60,6 +60,9 @@ This daemon will monitor and handle all of these events in real-time at minimal 
 
 ###Existing problems：
      pyinotify massage push need manually flush: Inotify is a series of API for receiving change massage of specified file and fold. python library of pyinotify is just a  encapsulation of these API. when I use bat to change users' directory(it happen quickly), pyinotify's massage pushing sometime get a little stuck. but not miss any massage, for which I only need to manually flush that fold. 
+
     inotify是接受文件(目录)变化消息通知的linux API, pyinotify是用python封装的这写API。
+
     测试显示，当用批处理更改文件的时候，pyinotify消息推送有时会卡顿，但不会漏报。 
+
     这个时候需要刷新一下文件目录消息还是会被推出来的。也就是在通过批处理改动用户信息的时候，如果没有生效，刷新一下那个目录。
