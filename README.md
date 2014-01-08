@@ -56,7 +56,7 @@ This daemon will monitor and handle all of these events in real-time at minimal 
     and  Add-Del-Modify a user's information, tornado application package update, update the daemon configuration file.
 
     then see the handling and recovery result of this daemon.
-[框架图](框架图.png)
+![框架图](框架图.png)
 
 ###Existing problems：
     pyinotify massage push need manually flush: Inotify is a series of API for receiving change massage of specified file and fold. python library of pyinotify is just a  encapsulation of these API. when I use bat to change users' directory(it happen quickly), pyinotify's massage pushing sometime get a little stuck. but not miss any massage, for which I only need to manually flush that fold. 
