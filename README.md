@@ -9,11 +9,11 @@ Invoicing project select the tornado as its Web server and nginx reverse proxy. 
 
 ##Project Background:
 
-    From the browser, mobile terminal, the FMCG Invoicing project provides professional online invoicing management services.
-    In invoicing project, One tornado process serves one company(user). Each service process would connect to one of multi-synchronized databases. During service processes' running, many exceptions may occur such as process crashes, DB status changing to (un)available, the tornado process get stuck, daemon crash itself. 
-    And there also may come some daily routines, such as Add-Del-Modify a user's information, tornado application package update, update the daemon configuration file. 
-    This daemon will monitor and handle all of these events in real-time at minimal performance cost, to ensure stability and robustness of invoicing service
-    在线进销存管理系统中，一个tornado进程服务与一个商户，每个服务进程只连接多同步db数据库中的一个。在服务运行中,很多异常可能发生比如db不可用了,进程卡死了,也有可能进行一些日常事务比如增删用户,程序包更新等等. 由此就需要一个就需要一个监控处理这些事件和变化的程序来保证在线服务的鲁棒性实时性.
+        From the browser, mobile terminal, the FMCG Invoicing project provides professional online invoicing management services.
+        In invoicing project, One tornado process serves one company(user). Each service process would connect to one of multi-synchronized databases. During service processes' running, many exceptions may occur such as process crashes, DB status changing to (un)available, the tornado process get stuck, daemon crash itself. 
+        And there also may come some daily routines, such as Add-Del-Modify a user's information, tornado application package update, update the daemon configuration file. 
+        This daemon will monitor and handle all of these events in real-time at minimal performance cost, to ensure stability and robustness of invoicing service
+        在线进销存管理系统中，一个tornado进程服务与一个商户，每个服务进程只连接多同步db数据库中的一个。在服务运行中,很多异常可能发生比如db不可用了,进程卡死了,也有可能进行一些日常事务比如增删用户,程序包更新等等. 由此就需要一个就需要一个监控处理这些事件和变化的程序来保证在线服务的鲁棒性实时性.
     
 
 ##  Modules Instruction：
