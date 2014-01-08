@@ -20,6 +20,7 @@ This daemon will monitor and handle all of these events in real-time at minimal 
     
 
 ##  Modules Instruction：
+
 - ####Main module:
         Each module will push some message to this module, main module will react properly on each kind of message. Of course it will also ensure its validation after a restart.
         主模块：负责对各种模块推送过来的变化消息做出应对，当然它也会保证自己的重启有效性。
