@@ -59,7 +59,6 @@ This daemon will monitor and handle all of these events in real-time at minimal 
 
 
 ###Existing problems：
-
     pyinotify massage push need manually flush: Inotify is a series of API for receiving change massage of specified file and fold. python library of pyinotify is just a  encapsulation of these API. when I use bat to change users' directory(it happen quickly), pyinotify's massage pushing sometime get a little stuck. but not miss any massage, for which I only need to manually flush that fold. 
 
     inotify是接受文件(目录)变化消息通知的linux API, pyinotify是用python封装的这写API。
